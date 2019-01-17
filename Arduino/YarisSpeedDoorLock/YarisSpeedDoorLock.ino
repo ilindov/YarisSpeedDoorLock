@@ -1,4 +1,4 @@
-#include <Canbus.h>  // don't forget to include these
+#include <Canbus.h>
 #include <defaults.h>
 #include <global.h>
 #include <mcp2515.h>
@@ -8,6 +8,7 @@
 
 int last_pwr_update;
 int data_ready_flag;
+int halted = FALSE;
 struct car_status status;
 
 void setup() {
@@ -17,10 +18,11 @@ void setup() {
   digitalWrite(PIN_LOC, LOW);
   pinMode(PIN_UNL, OUTPUT);
   digitalWrite(PIN_UNL, LOW);
-  
+  pinMode(PIN_LED, OUTPUT);
+  digitalWrite(PIN_LED, HIGH);
   
   if (!Canbus.init(CANSPEED_500)) {
-    halt();
+    while(1);
   }
 
   //  Turn on the relay, i.e. source the device from +30
@@ -30,9 +32,25 @@ void setup() {
   data_ready_flag = 0b000;
   
   delay(1000);
+  digitalWrite(PIN_LED, LOW);
+  delay(1000);
 }
 
 void loop() {
+  if (halted) {
+    if (halted == 1) {
+      digitalWrite(PIN_LOC, LOW);
+      digitalWrite(PIN_UNL, LOW);
+      digitalWrite(PIN_REL, LOW);
+    }
+    delay(10);
+    
+    if (halted++ >= 3000){
+      digitalWrite(PIN_REL, HIGH);
+      halted = FALSE;
+    } 
+  }
+  
   tCAN frame;
 
   if (mcp2515_check_message()) {
@@ -70,7 +88,7 @@ void evaluate_status() {
         if ((status.doors_unlocked & DOOR_UNL_DRVR) != DOOR_UNL_DRVR) {
             unlock_doors();
         }
-        halt();
+        halted = TRUE;
     }
     
     if (       status.doors_open == DOOR_OPEN_NONE
@@ -86,22 +104,25 @@ void evaluate_status() {
 }
 
 void lock_doors() {
+    digitalWrite(PIN_LED, HIGH);
+    delay(100);
+    digitalWrite(PIN_LED, LOW);
+    delay(100);
+    digitalWrite(PIN_LED, HIGH);
+    delay(100);
+    digitalWrite(PIN_LED, LOW);
+  
     digitalWrite(PIN_LOC, HIGH);
     delay(300);
     digitalWrite(PIN_LOC, LOW);
 }
 
 void unlock_doors() {
+    digitalWrite(PIN_LED, HIGH);
+    delay(100);
+    digitalWrite(PIN_LED, LOW);
+      
     digitalWrite(PIN_UNL, HIGH);
     delay(300);
     digitalWrite(PIN_UNL, LOW);
-}
-
-void halt() {
-  digitalWrite(PIN_LOC, LOW);
-  digitalWrite(PIN_UNL, LOW);
-  digitalWrite(PIN_REL, LOW);
-  
-  noInterrupts();
-  while(1);  
 }

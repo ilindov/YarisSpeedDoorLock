@@ -5,8 +5,9 @@
 #define FALSE 0
 
 #define PIN_REL 3
-#define PIN_LOC 6
-#define PIN_UNL 11
+#define PIN_LOC 4
+#define PIN_UNL 5
+#define PIN_LED 7
 
 #define DOOR_OPEN_NONE 0x40 // - all closed             0100 0000
 #define DOOR_OPEN_DRVR 0x20 // - driver’s open          0010 0000
